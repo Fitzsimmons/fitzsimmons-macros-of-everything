@@ -17,8 +17,8 @@ async function main() {
     return
   }
 
-  const result = await new Roll(DICE_EXPRESSION).roll({async: true})
-  const newTempHP = Math.max(actor.getRollData().attributes.hp.temp, result.total)
+  const message = await new Roll(DICE_EXPRESSION).toMessage({"flavor": `granting temporary HP to ${actor.name}:`})
+  const newTempHP = Math.max(actor.getRollData().attributes.hp.temp, message.rolls.reduce((t, x) => t + x.total, 0))
 
   console.log(`Updating ${actor.name} to have ${newTempHP} hitpoints`)
   await actor.update({"system.attributes.hp.temp": newTempHP})
