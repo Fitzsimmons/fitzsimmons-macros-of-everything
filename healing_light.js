@@ -16,6 +16,7 @@ function createDiceOptionsForm(count) {
 async function main(args) {
   let target = await fromUuid(args[0].hitTargetUuids[0] ?? "");
   let self = await fromUuid(args[0].actorUuid ?? "");
+  let token = await self.getTokenDocument();
 
   const remainingInPool = self.getRollData().resources.primary.value;
   const maximumSpend = Math.max(1, self.getRollData().abilities.cha.mod + 1);
@@ -48,12 +49,18 @@ async function main(args) {
     }).render(true);
   });
 
+  const healRoll = await new Roll(`${diceSelection}d6`).roll({async: true});
 
-  const healRollMessage = await new Roll(`${diceSelection}d6`).toMessage({"flavor": `${target.name} healed by Healing Light`});
-  const healTotal = healRollMessage.rolls.reduce((t, x) => t + x.total, 0);
-  console.log(`Would have healed ${healTotal}`); //TODO: actually heal
+  new MidiQOL.DamageOnlyWorkflow(
+    self,
+    token,
+    healRoll.total,
+    "healing",
+    [target],
+    healRoll,
+    {flavor: "Healing Light", itemCardId: args[0].itemCardId}
+  )
   
   const resourceRemaining = remainingInPool - diceSelection
   await self.update({"system.resources.primary.value": resourceRemaining});
-
 }
